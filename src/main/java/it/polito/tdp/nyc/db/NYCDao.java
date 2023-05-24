@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import it.polito.tdp.nyc.model.City;
 import it.polito.tdp.nyc.model.Hotspot;
 
 public class NYCDao {
@@ -35,5 +37,54 @@ public class NYCDao {
 
 		return result;
 	}
+	public List<String> getAllProvider(){
+		String sql = "SELECT tab.Provider, COUNT(*) as nHotspot "
+				+ "FROM nyc_wifi_hotspot_locations tab "
+				+ "GROUP BY tab.Provider";
+		List<String> result = new ArrayList<>();
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(res.getString("Provider"));
+			}
+			
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+
+		return result;
+	}
 	
+	public List<City> getCity(String provider){
+		String sql="SELECT tab.City, COUNT(*) as nHotspot, avg(tab.Latitude) as lat, avg(tab.Longitude) as lon "
+				+ "FROM nyc_wifi_hotspot_locations tab "
+				+ "WHERE tab.Provider = ? "
+				+ "GROUP BY tab.City";
+		List<City> result = new ArrayList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, provider);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(new City(res.getDouble("lat"), 
+						res.getDouble("lon"), 
+						res.getString("City")));
+			}
+			
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+
+		return result;
+	}
 }
